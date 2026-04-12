@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Invoices — Cable TV ERP{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <form method="GET" class="filter-form">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid</option>
+            <option value="unpaid" {% if status_filter == 'unpaid' %}selected{% endif %}>Unpaid</option>
+            <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+        </select>
+    </form>
+    {% if current_role == 'admin' or 'MANAGE_BILLING' in user_permissions %}
+    <a href="{{ url_for('billing.new_invoice') }}" class="btn btn-primary">+ New Invoice</a>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Period</th>
+                    <th>Amount</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in invoices %}
+                <tr>
+                    <td class="mono"><a href="{{ url_for('billing.invoice_detail', iid=i.invoiceId) }}">#{{ i.invoiceId }}</a></td>
+                    <td><a href="{{ url_for('customers.detail', cid=i.customerId) }}">{{ i.firstName }} {{ i.lastName }}</a></td>
+                    <td class="mono">{{ i.billingPeriod }}</td>
+                    <td>${{ "%.2f"|format(i.totalAmount|float) }}</td>
+                    <td class="mono text-secondary">{{ i.issueDate }}</td>
+                    <td class="mono text-secondary">{{ i.dueDate }}</td>
+                    <td><span class="badge badge-inv-{{ i.invoiceStatus }}">{{ i.invoiceStatus }}</span></td>
+                    <td class="actions">
+                        <a href="{{ url_for('billing.invoice_detail', iid=i.invoiceId) }}" class="btn btn-ghost btn-xs">View</a>
+                        {% if i.invoiceStatus != 'paid' and (current_role == 'admin' or 'MANAGE_BILLING' in user_permissions) %}
+                        <form method="POST" action="{{ url_for('billing.mark_paid', iid=i.invoiceId) }}" style="display:inline">
+                            <button type="submit" class="btn btn-success btn-xs">Mark Paid</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-secondary">No invoices found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

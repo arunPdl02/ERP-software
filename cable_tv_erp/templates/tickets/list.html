@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Tickets — Cable TV ERP{% endblock %}
+{% block page_title %}Support Tickets{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <form method="GET" class="filter-form">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+            <option value="in-progress" {% if status_filter == 'in-progress' %}selected{% endif %}>In Progress</option>
+            <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+            <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+        </select>
+        <select name="priority" class="form-select" onchange="this.form.submit()">
+            <option value="">All Priorities</option>
+            <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+            <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+        </select>
+    </form>
+    <a href="{{ url_for('tickets.new_ticket') }}" class="btn btn-primary">+ New Ticket</a>
+</div>
+
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tickets %}
+                <tr>
+                    <td class="mono"><a href="{{ url_for('tickets.ticket_detail', tid=t.ticketId) }}">#{{ t.ticketId }}</a></td>
+                    <td><a href="{{ url_for('customers.detail', cid=t.customerId) }}">{{ t.firstName }} {{ t.lastName }}</a></td>
+                    <td><span class="badge badge-priority-{{ t.priority }}">{{ t.priority }}</span></td>
+                    <td><span class="badge badge-status-{{ t.status|replace('-','') }}">{{ t.status }}</span></td>
+                    <td>{{ t.employeeName or '—' }}</td>
+                    <td class="mono text-secondary">{{ t.createdAt.strftime('%Y-%m-%d') if t.createdAt else '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('tickets.ticket_detail', tid=t.ticketId) }}" class="btn btn-ghost btn-xs">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-secondary">No tickets found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

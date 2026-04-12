@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}New Invoice — Cable TV ERP{% endblock %}
+{% block page_title %}New Invoice{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">Create Invoice</h2></div>
+        <form method="POST" class="form-body">
+            <div class="form-group">
+                <label for="customerId" class="form-label">Customer <span class="required">*</span></label>
+                <select id="customerId" name="customerId" class="form-select" required>
+                    <option value="">— Select Customer —</option>
+                    {% for c in customers %}
+                    <option value="{{ c.customerId }}"
+                        {% if form.get('customerId')|string == c.customerId|string %}selected{% endif %}>
+                        {{ c.firstName }} {{ c.lastName }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="subscriptionId" class="form-label">Subscription <span class="required">*</span></label>
+                <select id="subscriptionId" name="subscriptionId" class="form-select" required>
+                    <option value="">— Select Subscription —</option>
+                    {% for s in subscriptions %}
+                    <option value="{{ s.subscriptionId }}"
+                        {% if form.get('subscriptionId')|string == s.subscriptionId|string %}selected{% endif %}>
+                        #{{ s.subscriptionId }} — {{ s.packageName }} (${{ "%.2f"|format(s.monthlyPrice|float) }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="billingPeriod" class="form-label">Billing Period <span class="required">*</span></label>
+                <input type="text" id="billingPeriod" name="billingPeriod" class="form-input"
+                       placeholder="e.g. FEB-2025"
+                       value="{{ form.get('billingPeriod', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="dueDate" class="form-label">Due Date <span class="required">*</span></label>
+                <input type="date" id="dueDate" name="dueDate" class="form-input"
+                       value="{{ form.get('dueDate', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="description" class="form-label">Description (optional)</label>
+                <input type="text" id="description" name="description" class="form-input"
+                       value="{{ form.get('description', '') if form else '' }}">
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('billing.invoices') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

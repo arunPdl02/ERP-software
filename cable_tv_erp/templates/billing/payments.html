@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Payments — Cable TV ERP{% endblock %}
+{% block page_title %}Payments{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div></div>
+    <a href="{{ url_for('billing.new_payment') }}" class="btn btn-primary">+ Record Payment</a>
+</div>
+
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td class="mono text-secondary">#{{ p.paymentId }}</td>
+                    <td><a href="{{ url_for('customers.detail', cid=p.customerId) }}">{{ p.firstName }} {{ p.lastName }}</a></td>
+                    <td class="text-success">${{ "%.2f"|format(p.amount|float) }}</td>
+                    <td class="mono">{{ p.paymentDate }}</td>
+                    <td>{{ p.method }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-secondary">No payments found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

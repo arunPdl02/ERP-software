@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{% if action == 'new' %}New Customer{% else %}Edit Customer{% endif %} — Cable TV ERP{% endblock %}
+{% block page_title %}{% if action == 'new' %}New Customer{% else %}Edit Customer{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">{% if action == 'new' %}Create Customer{% else %}Edit Customer{% endif %}</h2>
+        </div>
+        <form method="POST" class="form-body">
+            {% if action == 'new' %}
+            <div class="form-group">
+                <label for="username" class="form-label">Username <span class="required">*</span></label>
+                <input type="text" id="username" name="username" class="form-input"
+                       value="{{ form.get('username', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Password <span class="required">*</span></label>
+                <input type="password" id="password" name="password" class="form-input" required>
+            </div>
+            {% endif %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name" class="form-label">First Name <span class="required">*</span></label>
+                    <input type="text" id="first_name" name="first_name" class="form-input"
+                           value="{{ form.get('first_name', form.get('firstName', '')) if form else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="last_name" class="form-label">Last Name <span class="required">*</span></label>
+                    <input type="text" id="last_name" name="last_name" class="form-input"
+                           value="{{ form.get('last_name', form.get('lastName', '')) if form else '' }}" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="address" class="form-label">Address <span class="required">*</span></label>
+                <input type="text" id="address" name="address" class="form-input"
+                       value="{{ form.get('address', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="account_status" class="form-label">Account Status</label>
+                <select id="account_status" name="account_status" class="form-select">
+                    {% set cur_status = form.get('account_status', form.get('accountStatus', 'active')) if form else 'active' %}
+                    <option value="active" {% if cur_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="suspended" {% if cur_status == 'suspended' %}selected{% endif %}>Suspended</option>
+                    <option value="inactive" {% if cur_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('customers.list_customers') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    {% if action == 'new' %}Create Customer{% else %}Save Changes{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Inventory Items — Cable TV ERP{% endblock %}
+{% block page_title %}Inventory Items{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div></div>
+    <a href="{{ url_for('inventory.new_item') }}" class="btn btn-primary">+ New Item</a>
+</div>
+
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Item Name</th>
+                    <th>Category</th>
+                    <th>Stock Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="mono text-secondary">{{ item.itemId }}</td>
+                    <td><strong>{{ item.itemName }}</strong></td>
+                    <td><span class="badge badge-category">{{ item.category }}</span></td>
+                    <td class="{% if item.stockLevel|int < 0 %}text-danger{% elif item.stockLevel|int == 0 %}text-warning{% else %}text-success{% endif %}">
+                        {{ item.stockLevel }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-secondary">No items found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

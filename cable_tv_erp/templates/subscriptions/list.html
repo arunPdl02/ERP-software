@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Subscriptions — Cable TV ERP{% endblock %}
+{% block page_title %}Subscriptions{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <form method="GET" class="filter-form">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+            <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+    </form>
+    <a href="{{ url_for('subscriptions.new_subscription') }}" class="btn btn-primary">+ New Subscription</a>
+</div>
+
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Package</th>
+                    <th>Price</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in subscriptions %}
+                <tr>
+                    <td class="mono text-secondary">{{ s.subscriptionId }}</td>
+                    <td><a href="{{ url_for('customers.detail', cid=s.customerId) }}">{{ s.firstName }} {{ s.lastName }}</a></td>
+                    <td>{{ s.packageName }}</td>
+                    <td class="text-success">${{ "%.2f"|format(s.monthlyPrice|float) }}/mo</td>
+                    <td class="mono">{{ s.startDate }}</td>
+                    <td class="mono">{{ s.endDate or '—' }}</td>
+                    <td><span class="badge badge-sub-{{ s.status }}">{{ s.status }}</span></td>
+                    <td>
+                        {% if s.status == 'active' %}
+                        <form method="POST" action="{{ url_for('subscriptions.cancel_subscription', sid=s.subscriptionId) }}" style="display:inline"
+                              onsubmit="return confirm('Cancel this subscription?')">
+                            <button type="submit" class="btn btn-danger btn-xs">Cancel</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-secondary">No subscriptions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Record Payment — Cable TV ERP{% endblock %}
+{% block page_title %}Record Payment{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">Record Payment</h2></div>
+        <form method="POST" class="form-body">
+            <div class="form-group">
+                <label for="customerId" class="form-label">Customer <span class="required">*</span></label>
+                <select id="customerId" name="customerId" class="form-select" required>
+                    <option value="">— Select Customer —</option>
+                    {% for c in customers %}
+                    <option value="{{ c.customerId }}"
+                        {% if form.get('customerId')|string == c.customerId|string %}selected{% endif %}>
+                        {{ c.firstName }} {{ c.lastName }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="amount" class="form-label">Amount ($) <span class="required">*</span></label>
+                <input type="number" id="amount" name="amount" class="form-input"
+                       step="0.01" min="0.01"
+                       value="{{ form.get('amount', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="paymentDate" class="form-label">Payment Date <span class="required">*</span></label>
+                <input type="date" id="paymentDate" name="paymentDate" class="form-input"
+                       value="{{ form.get('paymentDate', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="method" class="form-label">Payment Method <span class="required">*</span></label>
+                <select id="method" name="method" class="form-select" required>
+                    <option value="">— Select Method —</option>
+                    {% set cur_method = form.get('method', '') if form else '' %}
+                    <option value="credit card" {% if cur_method == 'credit card' %}selected{% endif %}>Credit Card</option>
+                    <option value="debit card" {% if cur_method == 'debit card' %}selected{% endif %}>Debit Card</option>
+                    <option value="bank transfer" {% if cur_method == 'bank transfer' %}selected{% endif %}>Bank Transfer</option>
+                    <option value="cash" {% if cur_method == 'cash' %}selected{% endif %}>Cash</option>
+                    <option value="cheque" {% if cur_method == 'cheque' %}selected{% endif %}>Cheque</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('billing.payments') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Record Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}New Transaction — Cable TV ERP{% endblock %}
+{% block page_title %}New Inventory Transaction{% endblock %}
+
+{% block content %}
+<div class="form-container form-container-wide">
+    <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">Create Inventory Transaction</h2></div>
+        <form method="POST" class="form-body" id="txn-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="transactionType" class="form-label">Type <span class="required">*</span></label>
+                    <select id="transactionType" name="transactionType" class="form-select" required>
+                        <option value="">— Select Type —</option>
+                        <option value="inbound" {% if form.get('transactionType') == 'inbound' %}selected{% endif %}>Inbound</option>
+                        <option value="outbound" {% if form.get('transactionType') == 'outbound' %}selected{% endif %}>Outbound</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="transactionDate" class="form-label">Date <span class="required">*</span></label>
+                    <input type="date" id="transactionDate" name="transactionDate" class="form-input"
+                           value="{{ form.get('transactionDate', '') if form else '' }}" required>
+                </div>
+            </div>
+
+            <div class="panel" style="background:var(--bg-primary); margin-bottom:1rem">
+                <div class="panel-header">
+                    <h3 class="panel-title" style="font-size:0.95rem">Line Items</h3>
+                    <button type="button" onclick="addLine()" class="btn btn-ghost btn-sm">+ Add Line</button>
+                </div>
+                <div id="lines-container">
+                    <div class="txn-line" id="line-0">
+                        <select name="itemId[]" class="form-select" style="flex:2" required>
+                            <option value="">— Item —</option>
+                            {% for i in items %}
+                            <option value="{{ i.itemId }}">{{ i.itemName }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="number" name="quantity[]" class="form-input" style="flex:1" min="1" placeholder="Qty" required>
+                        <button type="button" onclick="removeLine(this)" class="btn btn-danger btn-xs remove-line-btn" style="display:none">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('inventory.transactions') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Transaction</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const itemOptions = `{% for i in items %}<option value="{{ i.itemId }}">{{ i.itemName }}</option>{% endfor %}`;
+let lineCount = 1;
+
+function addLine() {
+    const container = document.getElementById('lines-container');
+    const div = document.createElement('div');
+    div.className = 'txn-line';
+    div.id = 'line-' + lineCount;
+    div.innerHTML = `
+        <select name="itemId[]" class="form-select" style="flex:2" required>
+            <option value="">— Item —</option>
+            ${itemOptions}
+        </select>
+        <input type="number" name="quantity[]" class="form-input" style="flex:1" min="1" placeholder="Qty" required>
+        <button type="button" onclick="removeLine(this)" class="btn btn-danger btn-xs remove-line-btn">✕</button>
+    `;
+    container.appendChild(div);
+    lineCount++;
+    updateRemoveButtons();
+}
+
+function removeLine(btn) {
+    btn.closest('.txn-line').remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const lines = document.querySelectorAll('.txn-line');
+    lines.forEach((line, idx) => {
+        const btn = line.querySelector('.remove-line-btn');
+        if (btn) btn.style.display = lines.length > 1 ? 'inline-flex' : 'none';
+    });
+}
+</script>
+{% endblock %}

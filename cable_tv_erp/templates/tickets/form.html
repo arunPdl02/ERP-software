@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}New Ticket — Cable TV ERP{% endblock %}
+{% block page_title %}New Support Ticket{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">Create Ticket</h2></div>
+        <form method="POST" class="form-body">
+            <div class="form-group">
+                <label for="customerId" class="form-label">Customer <span class="required">*</span></label>
+                <select id="customerId" name="customerId" class="form-select" required>
+                    <option value="">— Select Customer —</option>
+                    {% for c in customers %}
+                    <option value="{{ c.customerId }}"
+                        {% if form.get('customerId')|string == c.customerId|string %}selected{% endif %}>
+                        {{ c.firstName }} {{ c.lastName }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="priority" class="form-label">Priority <span class="required">*</span></label>
+                <select id="priority" name="priority" class="form-select" required>
+                    <option value="">— Select Priority —</option>
+                    {% set cur_p = form.get('priority', '') if form else '' %}
+                    <option value="high" {% if cur_p == 'high' %}selected{% endif %}>High</option>
+                    <option value="medium" {% if cur_p == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="low" {% if cur_p == 'low' %}selected{% endif %}>Low</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('tickets.list_tickets') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

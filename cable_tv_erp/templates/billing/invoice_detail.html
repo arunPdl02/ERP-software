@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Invoice #{{ invoice.invoiceId }} — Cable TV ERP{% endblock %}
+{% block page_title %}Invoice #{{ invoice.invoiceId }}{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <div class="detail-actions">
+        <a href="{{ url_for('billing.invoices') }}" class="btn btn-ghost">← Back</a>
+        {% if invoice.invoiceStatus != 'paid' and (current_role == 'admin' or 'MANAGE_BILLING' in user_permissions) %}
+        <form method="POST" action="{{ url_for('billing.mark_paid', iid=invoice.invoiceId) }}" style="display:inline">
+            <button type="submit" class="btn btn-success">Mark as Paid</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">Invoice Details</h2></div>
+        <div class="detail-fields">
+            <div class="detail-row">
+                <span class="detail-label">Invoice ID</span>
+                <span class="detail-value mono">#{{ invoice.invoiceId }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Customer</span>
+                <span class="detail-value">
+                    <a href="{{ url_for('customers.detail', cid=invoice.customerId) }}">{{ invoice.firstName }} {{ invoice.lastName }}</a>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Billing Period</span>
+                <span class="detail-value mono">{{ invoice.billingPeriod }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Amount</span>
+                <span class="detail-value">${{ "%.2f"|format(invoice.totalAmount|float) }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Issue Date</span>
+                <span class="detail-value mono">{{ invoice.issueDate }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Due Date</span>
+                <span class="detail-value mono">{{ invoice.dueDate }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="detail-value"><span class="badge badge-inv-{{ invoice.invoiceStatus }}">{{ invoice.invoiceStatus }}</span></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Line Items -->
+<div class="panel">
+    <div class="panel-header"><h2 class="panel-title">Line Items</h2></div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>#</th><th>Description</th><th>Unit Price</th><th>Qty</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody>
+                {% for li in line_items %}
+                <tr>
+                    <td class="mono text-secondary">{{ li.lineNumber }}</td>
+                    <td>{{ li.description }}</td>
+                    <td>${{ "%.2f"|format(li.unitPrice|float) }}</td>
+                    <td class="text-center">{{ li.unitCount }}</td>
+                    <td class="text-success">${{ "%.2f"|format(li.unitPrice|float * li.unitCount) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-secondary">No line items.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Payment Allocations -->
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Payment Allocations</h2>
+        {% if current_role == 'admin' or 'MANAGE_BILLING' in user_permissions %}
+        <a href="{{ url_for('billing.new_allocation') }}" class="btn btn-ghost btn-sm">+ Allocate Payment</a>
+        {% endif %}
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>Payment ID</th><th>Date</th><th>Method</th><th>Payment Total</th><th>Allocated</th></tr>
+            </thead>
+            <tbody>
+                {% for a in allocations %}
+                <tr>
+                    <td class="mono text-secondary">#{{ a.paymentId }}</td>
+                    <td class="mono">{{ a.paymentDate }}</td>
+                    <td>{{ a.method }}</td>
+                    <td>${{ "%.2f"|format(a.paymentTotal|float) }}</td>
+                    <td class="text-success">${{ "%.2f"|format(a.allocatedAmount|float) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-secondary">No payments allocated.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

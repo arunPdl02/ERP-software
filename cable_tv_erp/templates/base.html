@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cable TV ERP{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-icon">▣</span>
+                <span class="brand-text">CABLE ERP</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <span class="nav-icon">◈</span> Dashboard
+                </a>
+                <a href="{{ url_for('customers.list_customers') }}" class="nav-item {% if request.blueprint == 'customers' %}active{% endif %}">
+                    <span class="nav-icon">◉</span> Customers
+                </a>
+                {% if current_role == 'admin' %}
+                <a href="{{ url_for('employees.list_employees') }}" class="nav-item {% if request.blueprint == 'employees' %}active{% endif %}">
+                    <span class="nav-icon">◎</span> Employees
+                </a>
+                {% endif %}
+                <a href="{{ url_for('packages.list_packages') }}" class="nav-item {% if request.blueprint == 'packages' %}active{% endif %}">
+                    <span class="nav-icon">▦</span> Packages
+                </a>
+                {% if current_role == 'admin' or 'MANAGE_CUSTOMERS' in user_permissions %}
+                <a href="{{ url_for('subscriptions.list_subscriptions') }}" class="nav-item {% if request.blueprint == 'subscriptions' %}active{% endif %}">
+                    <span class="nav-icon">▤</span> Subscriptions
+                </a>
+                {% endif %}
+
+                <!-- Billing submenu -->
+                {% if current_role == 'admin' or 'MANAGE_BILLING' in user_permissions %}
+                <div class="nav-group">
+                    <input type="checkbox" id="billing-toggle" class="nav-toggle"
+                        {% if request.blueprint == 'billing' %}checked{% endif %}>
+                    <label for="billing-toggle" class="nav-group-label">
+                        <span class="nav-icon">◈</span> Billing
+                        <span class="nav-arrow">▸</span>
+                    </label>
+                    <div class="nav-submenu">
+                        <a href="{{ url_for('billing.invoices') }}" class="nav-subitem {% if request.endpoint == 'billing.invoices' or request.endpoint == 'billing.invoice_detail' %}active{% endif %}">Invoices</a>
+                        <a href="{{ url_for('billing.payments') }}" class="nav-subitem {% if request.endpoint == 'billing.payments' %}active{% endif %}">Payments</a>
+                        <a href="{{ url_for('billing.allocations') }}" class="nav-subitem {% if request.endpoint == 'billing.allocations' %}active{% endif %}">Allocations</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Inventory submenu -->
+                {% if current_role == 'admin' or 'MANAGE_INVENTORY' in user_permissions %}
+                <div class="nav-group">
+                    <input type="checkbox" id="inventory-toggle" class="nav-toggle"
+                        {% if request.blueprint == 'inventory' %}checked{% endif %}>
+                    <label for="inventory-toggle" class="nav-group-label">
+                        <span class="nav-icon">▧</span> Inventory
+                        <span class="nav-arrow">▸</span>
+                    </label>
+                    <div class="nav-submenu">
+                        <a href="{{ url_for('inventory.items') }}" class="nav-subitem {% if request.endpoint == 'inventory.items' %}active{% endif %}">Items</a>
+                        <a href="{{ url_for('inventory.devices') }}" class="nav-subitem {% if request.endpoint == 'inventory.devices' %}active{% endif %}">Devices</a>
+                        <a href="{{ url_for('inventory.transactions') }}" class="nav-subitem {% if request.endpoint == 'inventory.transactions' or request.endpoint == 'inventory.transaction_detail' %}active{% endif %}">Transactions</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if current_role == 'admin' or 'HANDLE_TICKETS' in user_permissions %}
+                <a href="{{ url_for('tickets.list_tickets') }}" class="nav-item {% if request.blueprint == 'tickets' %}active{% endif %}">
+                    <span class="nav-icon">◆</span> Tickets
+                </a>
+                {% endif %}
+                {% if current_role == 'admin' %}
+                <a href="{{ url_for('permissions.manage') }}" class="nav-item {% if request.blueprint == 'permissions' %}active{% endif %}">
+                    <span class="nav-icon">◇</span> Permissions
+                </a>
+                <a href="/admin/integrity" class="nav-item {% if request.path.startswith('/admin/integrity') %}active{% endif %}">
+                    <span class="nav-icon">◫</span> Integrity Checks
+                </a>
+                {% endif %}
+                {% if current_role == 'admin' or 'VIEW_REPORTS' in user_permissions %}
+                <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.blueprint == 'reports' %}active{% endif %}">
+                    <span class="nav-icon">▨</span> Reports
+                </a>
+                {% endif %}
+                <a href="/chatbot" class="nav-item {% if request.path.startswith('/chatbot') %}active{% endif %}">
+                    <span class="nav-icon">🤖</span> ERP Assistant
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <div class="main-wrapper">
+            <!-- Topbar -->
+            <header class="topbar">
+                <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+                <div class="topbar-right">
+                    <span class="user-badge">
+                        <span class="role-pill role-{{ current_role }}">{{ current_role|upper }}</span>
+                        {{ current_user_name }}
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <!-- Flash messages -->
+            <div class="flash-container" id="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}" role="alert">
+                        <span>{{ message }}</span>
+                        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                    {% endfor %}
+                {% endwith %}
+            </div>
+
+            <!-- Page content -->
+            <main class="content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

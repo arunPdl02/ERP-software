@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}New Allocation — Cable TV ERP{% endblock %}
+{% block page_title %}New Payment Allocation{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">Allocate Payment to Invoice</h2></div>
+        <form method="POST" class="form-body">
+            <div class="form-group">
+                <label for="paymentId" class="form-label">Payment <span class="required">*</span></label>
+                <select id="paymentId" name="paymentId" class="form-select" required>
+                    <option value="">— Select Payment —</option>
+                    {% for p in payments %}
+                    {% set remaining = p.amount|float - p.allocated|float %}
+                    <option value="{{ p.paymentId }}"
+                        {% if form.get('paymentId')|string == p.paymentId|string %}selected{% endif %}>
+                        #{{ p.paymentId }} — {{ p.firstName }} {{ p.lastName }} — ${{ "%.2f"|format(p.amount|float) }} ({{ p.method }}, {{ p.paymentDate }}) — Remaining: ${{ "%.2f"|format(remaining) }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="invoiceId" class="form-label">Invoice <span class="required">*</span></label>
+                <select id="invoiceId" name="invoiceId" class="form-select" required>
+                    <option value="">— Select Invoice —</option>
+                    {% for i in invoices %}
+                    {% set balance = i.totalAmount|float - i.paid|float %}
+                    <option value="{{ i.invoiceId }}"
+                        {% if form.get('invoiceId')|string == i.invoiceId|string %}selected{% endif %}>
+                        #{{ i.invoiceId }} — {{ i.firstName }} {{ i.lastName }} — {{ i.billingPeriod }} — Balance: ${{ "%.2f"|format(balance) }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="allocatedAmount" class="form-label">Amount ($) <span class="required">*</span></label>
+                <input type="number" id="allocatedAmount" name="allocatedAmount" class="form-input"
+                       step="0.01" min="0.01"
+                       value="{{ form.get('allocatedAmount', '') if form else '' }}" required>
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('billing.allocations') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Allocation</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

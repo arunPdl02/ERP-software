@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Permissions — Cable TV ERP{% endblock %}
+{% block page_title %}Permission Management{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Permission Matrix</h2>
+        <p class="panel-subtitle text-secondary">Click checkboxes to grant or revoke permissions instantly.</p>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table perm-matrix">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    {% for perm in permissions %}
+                    <th class="perm-col">{{ perm.permissionCode | replace('_', ' ') }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td class="mono">{{ user.userName }}</td>
+                    <td><span class="role-pill role-{{ user.role }}">{{ user.role }}</span></td>
+                    {% for perm in permissions %}
+                    <td class="text-center">
+                        <input type="checkbox"
+                               class="perm-checkbox"
+                               data-user-id="{{ user.userId }}"
+                               data-perm-code="{{ perm.permissionCode }}"
+                               {% if (user.userId, perm.permissionCode) in assigned_set %}checked{% endif %}>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% else %}
+                <tr><td colspan="{{ permissions|length + 2 }}" class="text-center text-secondary">No users found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="perm-toast" class="perm-toast" style="display:none"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.perm-checkbox').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        const userId = this.dataset.userId;
+        const permCode = this.dataset.permCode;
+        const granting = this.checked;
+        const url = granting ? '/permissions/grant' : '/permissions/revoke';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({userId: parseInt(userId), permissionCode: permCode})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showPermToast(granting ? 'Permission granted.' : 'Permission revoked.', 'success');
+            } else {
+                this.checked = !granting;
+                showPermToast('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(err => {
+            this.checked = !granting;
+            showPermToast('Network error.', 'error');
+        });
+    });
+});
+
+function showPermToast(msg, type) {
+    const toast = document.getElementById('perm-toast');
+    toast.textContent = msg;
+    toast.className = 'perm-toast perm-toast-' + type;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+</script>
+{% endblock %}

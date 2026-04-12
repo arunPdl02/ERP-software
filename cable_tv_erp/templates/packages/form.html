@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{% if action == 'new' %}New Package{% else %}Edit Package{% endif %} — Cable TV ERP{% endblock %}
+{% block page_title %}{% if action == 'new' %}New Package{% else %}Edit Package{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">{% if action == 'new' %}Create Package{% else %}Edit Package{% endif %}</h2>
+        </div>
+        <form method="POST" class="form-body">
+            <div class="form-group">
+                <label for="packageName" class="form-label">Package Name <span class="required">*</span></label>
+                <input type="text" id="packageName" name="packageName" class="form-input"
+                       value="{{ form.get('packageName', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="monthlyPrice" class="form-label">Monthly Price ($) <span class="required">*</span></label>
+                <input type="number" id="monthlyPrice" name="monthlyPrice" class="form-input"
+                       step="0.01" min="0.01"
+                       value="{{ form.get('monthlyPrice', '') if form else '' }}" required>
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('packages.list_packages') }}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    {% if action == 'new' %}Create Package{% else %}Save Changes{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

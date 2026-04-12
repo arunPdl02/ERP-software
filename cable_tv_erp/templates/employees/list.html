@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Employees — Cable TV ERP{% endblock %}
+{% block page_title %}Employees{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div></div>
+    <a href="{{ url_for('employees.new_employee') }}" class="btn btn-primary">+ New Employee</a>
+</div>
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Status</th>
+                    <th>Permissions</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in employees %}
+                <tr>
+                    <td class="mono text-secondary">{{ e.userId }}</td>
+                    <td class="mono">{{ e.userName }}</td>
+                    <td><span class="badge badge-acct-{{ e.status }}">{{ e.status }}</span></td>
+                    <td>
+                        {% if e.permissions %}
+                            {% for perm in e.permissions.split(', ') %}
+                            <span class="badge badge-perm">{{ perm }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-secondary">None</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('employees.delete_employee', uid=e.userId) }}" style="display:inline"
+                              onsubmit="return confirm('Delete employee {{ e.userName }}?')">
+                            <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-secondary">No employees found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

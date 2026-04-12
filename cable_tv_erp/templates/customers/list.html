@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Customers — Cable TV ERP{% endblock %}
+{% block page_title %}Customers{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <form method="GET" class="search-form">
+        <input type="text" name="q" value="{{ search }}" placeholder="Search by name..." class="form-input search-input">
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if search %}<a href="{{ url_for('customers.list_customers') }}" class="btn btn-ghost">Clear</a>{% endif %}
+    </form>
+    {% if current_role == 'admin' or 'MANAGE_CUSTOMERS' in user_permissions %}
+    <a href="{{ url_for('customers.new_customer') }}" class="btn btn-primary">+ New Customer</a>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table" id="customers-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Active Subs</th>
+                    <th>Open Tickets</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td class="mono text-secondary">{{ c.customerId }}</td>
+                    <td><a href="{{ url_for('customers.detail', cid=c.customerId) }}">{{ c.firstName }} {{ c.lastName }}</a></td>
+                    <td><span class="badge badge-acct-{{ c.accountStatus }}">{{ c.accountStatus }}</span></td>
+                    <td class="text-center">{{ c.activeSubs }}</td>
+                    <td class="text-center">{{ c.openTickets }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('customers.detail', cid=c.customerId) }}" class="btn btn-ghost btn-xs">View</a>
+                        {% if current_role == 'admin' or 'MANAGE_CUSTOMERS' in user_permissions %}
+                        <a href="{{ url_for('customers.edit_customer', cid=c.customerId) }}" class="btn btn-ghost btn-xs">Edit</a>
+                        {% endif %}
+                        {% if current_role == 'admin' %}
+                        <form method="POST" action="{{ url_for('customers.delete_customer', cid=c.customerId) }}" style="display:inline" onsubmit="return confirm('Delete customer {{ c.firstName }} {{ c.lastName }}? This cannot be undone.')">
+                            <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-secondary">No customers found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

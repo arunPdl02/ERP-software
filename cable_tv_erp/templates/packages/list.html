@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Packages — Cable TV ERP{% endblock %}
+{% block page_title %}Packages{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div></div>
+    {% if current_role == 'admin' %}
+    <a href="{{ url_for('packages.new_package') }}" class="btn btn-primary">+ New Package</a>
+    {% endif %}
+</div>
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Package Name</th>
+                    <th>Monthly Price</th>
+                    <th>Active Subscriptions</th>
+                    {% if current_role == 'admin' %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in packages %}
+                <tr>
+                    <td class="mono text-secondary">{{ p.packageId }}</td>
+                    <td><strong>{{ p.packageName }}</strong></td>
+                    <td class="text-success">${{ "%.2f"|format(p.monthlyPrice|float) }}/mo</td>
+                    <td class="text-center">{{ p.activeSubs }}</td>
+                    {% if current_role == 'admin' %}
+                    <td class="actions">
+                        <a href="{{ url_for('packages.edit_package', pid=p.packageId) }}" class="btn btn-ghost btn-xs">Edit</a>
+                        <form method="POST" action="{{ url_for('packages.delete_package', pid=p.packageId) }}" style="display:inline"
+                              onsubmit="return confirm('Delete package {{ p.packageName }}?')">
+                            <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-secondary">No packages found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

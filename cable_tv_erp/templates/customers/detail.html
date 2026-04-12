@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.firstName }} {{ customer.lastName }} — Cable TV ERP{% endblock %}
+{% block page_title %}Customer: {{ customer.firstName }} {{ customer.lastName }}{% endblock %}
+
+{% block content %}
+<div class="detail-header">
+    <div class="detail-actions">
+        <a href="{{ url_for('customers.list_customers') }}" class="btn btn-ghost">← Back</a>
+        {% if current_role == 'admin' or 'MANAGE_CUSTOMERS' in user_permissions %}
+        <a href="{{ url_for('customers.edit_customer', cid=customer.customerId) }}" class="btn btn-primary">Edit</a>
+        {% endif %}
+        {% if current_role == 'admin' %}
+        <form method="POST" action="{{ url_for('customers.delete_customer', cid=customer.customerId) }}" style="display:inline"
+              onsubmit="return confirm('Delete this customer? This cannot be undone.')">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <!-- Customer Info -->
+    <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">Account Info</h2></div>
+        <div class="detail-fields">
+            <div class="detail-row">
+                <span class="detail-label">Customer ID</span>
+                <span class="detail-value mono">{{ customer.customerId }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Full Name</span>
+                <span class="detail-value">{{ customer.firstName }} {{ customer.lastName }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Address</span>
+                <span class="detail-value">{{ customer.address }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="detail-value"><span class="badge badge-acct-{{ customer.accountStatus }}">{{ customer.accountStatus }}</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscriptions -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Subscriptions</h2>
+            {% if current_role == 'admin' or 'MANAGE_CUSTOMERS' in user_permissions %}
+            <a href="{{ url_for('subscriptions.new_subscription') }}" class="btn btn-ghost btn-sm">+ New</a>
+            {% endif %}
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr><th>ID</th><th>Package</th><th>Price</th><th>Start</th><th>End</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for s in subscriptions %}
+                    <tr>
+                        <td class="mono text-secondary">{{ s.subscriptionId }}</td>
+                        <td>{{ s.packageName }}</td>
+                        <td>${{ "%.2f"|format(s.monthlyPrice|float) }}/mo</td>
+                        <td class="mono">{{ s.startDate }}</td>
+                        <td class="mono">{{ s.endDate or '—' }}</td>
+                        <td><span class="badge badge-sub-{{ s.status }}">{{ s.status }}</span></td>
+                        <td>
+                            {% if s.status == 'active' and (current_role == 'admin' or 'MANAGE_CUSTOMERS' in user_permissions) %}
+                            <form method="POST" action="{{ url_for('subscriptions.cancel_subscription', sid=s.subscriptionId) }}" style="display:inline"
+                                  onsubmit="return confirm('Cancel this subscription?')">
+                                <button type="submit" class="btn btn-danger btn-xs">Cancel</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-secondary">No subscriptions.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Invoices -->
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Invoices</h2>
+        {% if current_role == 'admin' or 'MANAGE_BILLING' in user_permissions %}
+        <a href="{{ url_for('billing.new_invoice') }}" class="btn btn-ghost btn-sm">+ New Invoice</a>
+        {% endif %}
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>ID</th><th>Period</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Due</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for i in invoices %}
+                <tr>
+                    <td class="mono"><a href="{{ url_for('billing.invoice_detail', iid=i.invoiceId) }}">#{{ i.invoiceId }}</a></td>
+                    <td class="mono">{{ i.billingPeriod }}</td>
+                    <td>${{ "%.2f"|format(i.totalAmount|float) }}</td>
+                    <td class="text-success">${{ "%.2f"|format(i.totalPaid|float) }}</td>
+                    <td class="{% if i.balance|float > 0 %}text-danger{% else %}text-success{% endif %}">${{ "%.2f"|format(i.balance|float) }}</td>
+                    <td><span class="badge badge-inv-{{ i.invoiceStatus }}">{{ i.invoiceStatus }}</span></td>
+                    <td class="mono text-secondary">{{ i.dueDate }}</td>
+                    <td>
+                        {% if i.invoiceStatus != 'paid' and (current_role == 'admin' or 'MANAGE_BILLING' in user_permissions) %}
+                        <form method="POST" action="{{ url_for('billing.mark_paid', iid=i.invoiceId) }}" style="display:inline">
+                            <button type="submit" class="btn btn-success btn-xs">Mark Paid</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-secondary">No invoices.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Device Assignments -->
+<div class="panel">
+    <div class="panel-header"><h2 class="panel-title">Device Assignments</h2></div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>Device</th><th>Item</th><th>Card #</th><th>Serial #</th><th>Assigned</th><th>Returned</th></tr>
+            </thead>
+            <tbody>
+                {% for d in devices %}
+                <tr>
+                    <td class="mono text-secondary">{{ d.deviceId }}</td>
+                    <td>{{ d.itemName }}</td>
+                    <td class="mono">{{ d.cardNumber }}</td>
+                    <td class="mono">{{ d.serialNumber }}</td>
+                    <td class="mono">{{ d.assignedDate }}</td>
+                    <td class="mono">{{ d.returnedDate or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-secondary">No device assignments.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Support Tickets -->
+<div class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Support Tickets</h2>
+        <a href="{{ url_for('tickets.new_ticket') }}" class="btn btn-ghost btn-sm">+ New Ticket</a>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr><th>ID</th><th>Priority</th><th>Status</th><th>Assigned To</th><th>Created</th></tr>
+            </thead>
+            <tbody>
+                {% for t in tickets %}
+                <tr>
+                    <td class="mono"><a href="{{ url_for('tickets.ticket_detail', tid=t.ticketId) }}">#{{ t.ticketId }}</a></td>
+                    <td><span class="badge badge-priority-{{ t.priority }}">{{ t.priority }}</span></td>
+                    <td><span class="badge badge-status-{{ t.status|replace('-','') }}">{{ t.status }}</span></td>
+                    <td>{{ t.employeeName or '—' }}</td>
+                    <td class="mono text-secondary">{{ t.createdAt.strftime('%Y-%m-%d') if t.createdAt else '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-secondary">No tickets.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

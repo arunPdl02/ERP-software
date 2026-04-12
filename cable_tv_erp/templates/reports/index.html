@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Reports — Cable TV ERP{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="reports-toc panel" style="margin-bottom:1.5rem">
+    <div class="panel-header"><h2 class="panel-title">Report Index</h2></div>
+    <div class="report-toc-grid">
+        {% for num, report in reports.items() %}
+        <a href="#report-{{ num }}" class="toc-item">
+            <span class="toc-num">{{ num }}</span>
+            <span class="toc-title">{{ report.title }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% for num, report in reports.items() %}
+<div class="panel report-section" id="report-{{ num }}">
+    <div class="panel-header">
+        <div>
+            <h2 class="panel-title">
+                <span class="report-num">{{ num }}</span>
+                {{ report.title }}
+            </h2>
+            <p class="text-secondary" style="font-size:0.85rem; margin:0.25rem 0 0">{{ report.description }}</p>
+        </div>
+        {% if num == 10 and current_role == 'admin' %}
+        <form method="POST" action="{{ url_for('reports.reactivate_accounts') }}">
+            <button type="submit" class="btn btn-warning"
+                    onclick="return confirm('Reactivate all eligible suspended accounts?')">
+                ↺ Reactivate Eligible Accounts
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- SQL toggle -->
+    <details class="sql-details">
+        <summary class="sql-summary">Show SQL</summary>
+        <pre class="sql-code">{{ report.sql }}</pre>
+    </details>
+
+    <!-- Results table -->
+    {% if errors.get(num) %}
+    <div class="flash flash-error">Query error: {{ errors[num] }}</div>
+    {% else %}
+    {% set rows = results[num] %}
+    {% if rows %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    {% for col in rows[0].keys() %}
+                    <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for val in row.values() %}
+                    <td>
+                        {% if val is none %}
+                        <span class="text-secondary">NULL</span>
+                        {% else %}
+                        {{ val }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="text-secondary" style="font-size:0.8rem; padding:0.5rem 1rem">{{ rows|length }} row(s) returned.</p>
+    {% else %}
+    <p class="text-secondary" style="padding:1rem">No results.</p>
+    {% endif %}
+    {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

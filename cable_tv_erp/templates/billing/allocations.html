@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Payment Allocations — Cable TV ERP{% endblock %}
+{% block page_title %}Payment Allocations{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div></div>
+    <a href="{{ url_for('billing.new_allocation') }}" class="btn btn-primary">+ New Allocation</a>
+</div>
+
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Invoice ID</th>
+                    <th>Customer</th>
+                    <th>Period</th>
+                    <th>Allocated</th>
+                    <th>Pay Method</th>
+                    <th>Pay Date</th>
+                    <th>Invoice Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in allocations %}
+                <tr>
+                    <td class="mono text-secondary">#{{ a.paymentId }}</td>
+                    <td class="mono"><a href="{{ url_for('billing.invoice_detail', iid=a.invoiceId) }}">#{{ a.invoiceId }}</a></td>
+                    <td>{{ a.firstName }} {{ a.lastName }}</td>
+                    <td class="mono">{{ a.billingPeriod }}</td>
+                    <td class="text-success">${{ "%.2f"|format(a.allocatedAmount|float) }}</td>
+                    <td>{{ a.method }}</td>
+                    <td class="mono">{{ a.paymentDate }}</td>
+                    <td><span class="badge badge-inv-{{ a.invoiceStatus }}">{{ a.invoiceStatus }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-secondary">No allocations found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

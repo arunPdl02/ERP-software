@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}Integrity Checks — Cable TV ERP{% endblock %}
+{% block page_title %}Data Integrity Checks{% endblock %}
+
+{% block content %}
+<!-- Header panel -->
+<div class="panel" style="margin-bottom:1rem">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; padding:1rem 1.25rem; flex-wrap:wrap; gap:1rem">
+        <div>
+            <p class="text-secondary" style="font-size:0.85rem; margin-top:0.25rem; max-width:540px">
+                Runs {{ total }} SQL sanity checks against the live database.
+                Each check returns 0 rows if the database is healthy.
+                Business logic invariants that cannot be enforced by schema constraints alone.
+            </p>
+        </div>
+        <div style="display:flex; align-items:center; gap:1rem; flex-shrink:0">
+            <span class="text-secondary" style="font-size:0.82rem" id="last-run-label">Last run: never</span>
+            <button id="run-btn" class="btn btn-primary" onclick="runChecks()">
+                ▶ Run Checks
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Results table -->
+<div class="panel">
+    <div class="table-wrapper">
+        <table class="data-table" id="integrity-table">
+            <thead>
+                <tr>
+                    <th style="width:60px">ID</th>
+                    <th>Check Name</th>
+                    <th style="width:180px">Description</th>
+                    <th style="width:90px; text-align:center">Severity</th>
+                    <th style="width:110px; text-align:center">Status</th>
+                    <th style="width:80px; text-align:center">Rows</th>
+                </tr>
+            </thead>
+            <tbody id="results-body">
+                {% for a in assertions %}
+                <tr class="assertion-row" data-id="{{ a.id }}" onclick="toggleDetail('{{ a.id }}')">
+                    <td class="mono text-secondary">{{ a.id }}</td>
+                    <td><strong>{{ a.name }}</strong></td>
+                    <td class="text-secondary" style="font-size:0.82rem">{{ a.description }}</td>
+                    <td style="text-align:center">
+                        <span class="severity-{{ a.severity|lower }}">{{ a.severity }}</span>
+                    </td>
+                    <td style="text-align:center">
+                        <span class="badge badge-pending" id="badge-{{ a.id }}">Not run</span>
+                    </td>
+                    <td style="text-align:center" id="count-{{ a.id }}" class="mono text-secondary">—</td>
+                </tr>
+                <tr class="detail-row" id="detail-{{ a.id }}" style="display:none">
+                    <td colspan="6" style="padding:0">
+                        <div class="detail-content" id="detail-content-{{ a.id }}"></div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Summary bar -->
+<div id="summary-bar" class="panel" style="display:none; margin-top:1rem; padding:1rem 1.5rem">
+    <div style="display:flex; gap:2rem; align-items:center; flex-wrap:wrap">
+        <span class="text-secondary" style="font-size:0.85rem">Summary:</span>
+        <span id="sum-passed" class="text-success" style="font-weight:600"></span>
+        <span id="sum-high"   class="text-danger"  style="font-weight:600"></span>
+        <span id="sum-medium" class="text-warning" style="font-weight:600"></span>
+        <span id="sum-low"    style="color:var(--accent); font-weight:600"></span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* ── Severity labels ───────────────────────────────────────────────────── */
+.severity-high   { color: var(--danger);  font-weight: 600; font-size: 0.82rem; }
+.severity-medium { color: var(--warning); font-weight: 600; font-size: 0.82rem; }
+.severity-low    { color: var(--accent);  font-weight: 600; font-size: 0.82rem; }
+
+/* ── Status badges ─────────────────────────────────────────────────────── */
+.badge-pass {
+    background: rgba(61, 214, 140, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(61, 214, 140, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.badge-fail-high {
+    background: rgba(240, 82, 82, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(240, 82, 82, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.badge-fail-medium {
+    background: rgba(245, 166, 35, 0.15);
+    color: var(--warning);
+    border: 1px solid rgba(245, 166, 35, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.badge-fail-low {
+    background: rgba(79, 142, 247, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(79, 142, 247, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.badge-pending {
+    background: rgba(139, 144, 168, 0.15);
+    color: var(--text-secondary);
+    border: 1px solid rgba(139, 144, 168, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+}
+.badge-running {
+    background: rgba(79, 142, 247, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(79, 142, 247, 0.2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    animation: blink 1s infinite;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+/* ── Row interaction ───────────────────────────────────────────────────── */
+.assertion-row { cursor: default; }
+.assertion-row.clickable { cursor: pointer; }
+.assertion-row.clickable:hover td { background: rgba(255,255,255,0.03); }
+
+/* ── Detail sub-row ────────────────────────────────────────────────────── */
+.detail-content {
+    padding: 0.75rem 1.25rem 0.75rem 2rem;
+    background: rgba(0,0,0,0.15);
+    border-top: 1px solid var(--border);
+}
+.detail-content p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    font-family: var(--mono);
+}
+.detail-table th {
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 0.25rem 0.75rem 0.25rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.detail-table td {
+    padding: 0.3rem 0.75rem 0.3rem 0;
+    color: var(--danger);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+</style>
+
+<script>
+const runBtn = document.getElementById('run-btn');
+
+function setAllBadges(cls, text) {
+    document.querySelectorAll('[id^="badge-"]').forEach(el => {
+        el.className = cls;
+        el.textContent = text;
+    });
+    document.querySelectorAll('[id^="count-"]').forEach(el => {
+        el.textContent = '—';
+    });
+}
+
+function badgeClass(status, severity) {
+    if (status === 'PASS') return 'badge-pass';
+    return `badge-fail-${severity.toLowerCase()}`;
+}
+
+function badgeText(status) {
+    return status === 'PASS' ? '✅ PASS' : '❌ FAIL';
+}
+
+function toggleDetail(id) {
+    const row = document.getElementById(`detail-${id}`);
+    if (!row || row.style.display === 'none') return; // only show if FAIL
+    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+function renderDetailRows(result) {
+    const contentEl = document.getElementById(`detail-content-${result.id}`);
+    if (!result.rows || result.rows.length === 0) {
+        contentEl.innerHTML = '<p>No row data available.</p>';
+        return;
+    }
+
+    const cols = Object.keys(result.rows[0]);
+    let html = `<p>${result.row_count} offending row(s) — click row again to collapse</p>`;
+    html += '<table class="detail-table"><thead><tr>';
+    cols.forEach(c => { html += `<th>${c}</th>`; });
+    html += '</tr></thead><tbody>';
+    result.rows.forEach(row => {
+        html += '<tr>';
+        cols.forEach(c => { html += `<td>${row[c] ?? 'NULL'}</td>`; });
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    contentEl.innerHTML = html;
+}
+
+async function runChecks() {
+    // Disable button, show running state
+    runBtn.disabled = true;
+    runBtn.textContent = '⟳ Running…';
+    setAllBadges('badge-running', '…');
+
+    // Hide summary and detail rows
+    document.getElementById('summary-bar').style.display = 'none';
+    document.querySelectorAll('.detail-row').forEach(r => { r.style.display = 'none'; });
+    document.querySelectorAll('.assertion-row').forEach(r => { r.classList.remove('clickable'); });
+
+    try {
+        const resp = await fetch('/admin/integrity/run', { method: 'POST' });
+        if (!resp.ok) {
+            throw new Error(`Server returned ${resp.status}`);
+        }
+        const data = await resp.json();
+
+        // Update last-run label
+        document.getElementById('last-run-label').textContent = `Last run: ${data.run_time}`;
+
+        // Update each row
+        data.results.forEach(result => {
+            const badge = document.getElementById(`badge-${result.id}`);
+            const count = document.getElementById(`count-${result.id}`);
+
+            badge.className = badgeClass(result.status, result.severity);
+            badge.textContent = badgeText(result.status);
+            count.textContent = result.row_count;
+
+            if (result.status === 'FAIL') {
+                // Render detail content and make row clickable
+                renderDetailRows(result);
+                const detailRow = document.getElementById(`detail-${result.id}`);
+                detailRow.style.display = 'table-row'; // auto-expand FAILs
+
+                const assertRow = document.querySelector(`[data-id="${result.id}"]`);
+                assertRow.classList.add('clickable');
+            }
+        });
+
+        // Update summary bar
+        const s = data.summary;
+        document.getElementById('sum-passed').textContent  = `${s.passed} passed`;
+        document.getElementById('sum-high').textContent    = `${s.high_failures} HIGH failure${s.high_failures !== 1 ? 's' : ''}`;
+        document.getElementById('sum-medium').textContent  = `${s.medium_failures} MEDIUM failure${s.medium_failures !== 1 ? 's' : ''}`;
+        document.getElementById('sum-low').textContent     = `${s.low_failures} LOW failure${s.low_failures !== 1 ? 's' : ''}`;
+        document.getElementById('summary-bar').style.display = 'block';
+
+    } catch (err) {
+        setAllBadges('badge-pending', 'Error');
+        console.error('Integrity run failed:', err);
+        alert('Failed to run integrity checks: ' + err.message);
+    } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = '▶ Run Checks';
+    }
+}
+</script>
+{% endblock %}

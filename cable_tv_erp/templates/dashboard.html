@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Cable TV ERP{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Active Customers</div>
+        <div class="stat-value">{{ active_customers }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active Subscriptions</div>
+        <div class="stat-value">{{ active_subs }}</div>
+    </div>
+    <div class="stat-card stat-card-danger">
+        <div class="stat-label">Overdue Invoices</div>
+        <div class="stat-value">{{ overdue_invoices_count }}</div>
+    </div>
+    <div class="stat-card stat-card-success">
+        <div class="stat-label">Monthly Revenue</div>
+        <div class="stat-value">${{ "%.2f"|format(monthly_revenue|float) }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Inventory Items</div>
+        <div class="stat-value">{{ inventory_items }}</div>
+    </div>
+    <div class="stat-card stat-card-warning">
+        <div class="stat-label">Open Tickets</div>
+        <div class="stat-value">{{ open_tickets }}</div>
+    </div>
+</div>
+
+<div class="panel-grid">
+    <!-- Recent Tickets -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Recent Tickets</h2>
+            <a href="{{ url_for('tickets.list_tickets') }}" class="btn btn-ghost btn-sm">View All</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Customer</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in recent_tickets %}
+                    <tr>
+                        <td class="mono">
+                            <a href="{{ url_for('tickets.ticket_detail', tid=t.ticketId) }}">#{{ t.ticketId }}</a>
+                        </td>
+                        <td>{{ t.firstName }} {{ t.lastName }}</td>
+                        <td><span class="badge badge-priority-{{ t.priority }}">{{ t.priority }}</span></td>
+                        <td><span class="badge badge-status-{{ t.status|replace('-','') }}">{{ t.status }}</span></td>
+                        <td>{{ t.employeeName or '—' }}</td>
+                        <td class="mono text-secondary">{{ t.createdAt.strftime('%Y-%m-%d') if t.createdAt else '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-secondary">No tickets found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Overdue Invoices -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Overdue Invoices</h2>
+            <a href="{{ url_for('billing.invoices', status='overdue') }}" class="btn btn-ghost btn-sm">View All</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Customer</th>
+                        <th>Period</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in overdue_invoices %}
+                    <tr>
+                        <td class="mono">
+                            <a href="{{ url_for('billing.invoice_detail', iid=i.invoiceId) }}">#{{ i.invoiceId }}</a>
+                        </td>
+                        <td>{{ i.firstName }} {{ i.lastName }}</td>
+                        <td class="mono">{{ i.billingPeriod }}</td>
+                        <td class="text-danger">${{ "%.2f"|format(i.totalAmount|float) }}</td>
+                        <td class="mono text-secondary">{{ i.dueDate }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-secondary">No overdue invoices.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
